@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Weekend Crew Availability</title>
+<style>
+  :root { --navy:#0b2545; --accent:#1d6fb8; --ok:#2e7d32; --bg:#f4f6f8; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+         background:var(--bg); color:#13293d; display:flex; justify-content:center;
+         min-height:100vh; padding:24px; }
+  .card { background:#fff; width:100%; max-width:420px; border-radius:16px;
+          box-shadow:0 6px 24px rgba(0,0,0,.12); padding:28px 24px; height:fit-content; }
+  h1 { font-size:1.35rem; margin:0 0 4px; }
+  p.sub { margin:0 0 22px; color:#5a6b7b; font-size:.95rem; }
+  label { display:block; font-weight:600; margin:0 0 8px; font-size:.95rem; }
+  select { width:100%; padding:14px; font-size:1.05rem; border:2px solid #d4dde5;
+           border-radius:10px; background:#fff; margin-bottom:24px; }
+  .choices { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  button.choice { padding:18px 12px; font-size:1.05rem; font-weight:600; border:2px solid var(--accent);
+                  background:#fff; color:var(--accent); border-radius:12px; cursor:pointer;
+                  transition:.15s; }
+  button.choice:active { transform:scale(.97); }
+  button.choice:disabled { opacity:.4; cursor:default; }
+  #status { margin-top:22px; padding:16px; border-radius:10px; text-align:center;
+            font-weight:600; display:none; }
+  #status.ok  { display:block; background:#e6f4ea; color:var(--ok); }
+  #status.err { display:block; background:#fdecec; color:#c62828; }
+  .emoji { font-size:1.5rem; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <h1><span class="emoji">&#128676;</span> Weekend Crew Availability</h1>
+    <p class="sub">Pick your name, then tap the day(s) you can crew.</p>
+
+    <label for="crew">Your name</label>
+    <select id="crew">
+      <option value="" disabled selected>&mdash; choose your name &mdash;</option>
+      <!-- EDIT THIS LIST: one <option> per crew member -->
+      <option>Jake Le Vesconte</option>
+      <option>Crew Member 2</option>
+      <option>Crew Member 3</option>
+      <option>Crew Member 4</option>
+      <!-- add the rest of your crew here -->
+    </select>
+
+    <div class="choices">
+      <button class="choice" data-choice="Saturday">Saturday</button>
+      <button class="choice" data-choice="Sunday">Sunday</button>
+      <button class="choice" data-choice="Both">Both</button>
+      <button class="choice" data-choice="Neither">Neither</button>
+    </div>
+
+    <div id="status"></div>
+  </div>
+
+<script>
+  // ===== EDIT THIS: paste your FULL Flow 2 HTTP trigger URL (including the &sig=... tail) =====
+  const FLOW_URL = "PASTE_YOUR_FULL_FLOW_URL_HERE";
+  // ============================================================================================
+
+  const crewSel = document.getElementById("crew");
+  const statusEl = document.getElementById("status");
+  const buttons = document.querySelectorAll("button.choice");
+
+  function setStatus(msg, kind) {
+    statusEl.textContent = msg;
+    statusEl.className = kind;
+  }
+
+  buttons.forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const crew = crewSel.value;
+      if (!crew) { setStatus("Please choose your name first.", "err"); return; }
+      const choice = btn.dataset.choice;
+
+      buttons.forEach(b => b.disabled = true);
+      setStatus("Sending\u2026", "ok");
+
+      try {
+        // text/plain avoids a CORS preflight; Flow parses the JSON body regardless.
+        await fetch(FLOW_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain" },
+          body: JSON.stringify({ crew: crew, choice: choice })
+        });
+        setStatus("\u2713 Thanks " + crew.split(" ")[0] + " \u2014 you're marked as \u201c" + choice + "\u201d. You can close this page.", "ok");
+      } catch (e) {
+        setStatus("Couldn't send \u2014 please try again, or tell Jake.", "err");
+        buttons.forEach(b => b.disabled = false);
+      }
+    });
+  });
+</script>
+</body>
+</html>
